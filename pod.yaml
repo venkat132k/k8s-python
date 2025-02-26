@@ -31,3 +31,10 @@ spec:
           imagePullPolicy: Always
       imagePullSecrets:
         - name: ecr-secret
+---
+#kubectl create secret docker-registry ecr-secret \
+  #  --docker-server=211125606679.dkr.ecr.ap-south-1.amazonaws.com \
+  #  --docker-username=AWS \
+  # --docker-password=$(aws ecr get-login-password --region ap-south-1) \
+  # --namespace default
+# uncomment and run this command to create a secrets with ecr login credentials and refer them in deloyment using imagepullsecrets
