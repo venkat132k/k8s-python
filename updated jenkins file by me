@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+    
+     environment {
+        AWS_REGION = 'ap-south-1'  // Change to your AWS region
+        ECR_REPOSITORY = 'venkats_ecr_repo' // replace with your repo name
+        AWS_ACCOUNT_ID = '211125606679'  // Replace with your AWS Account ID
+        ECR_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        EKS_CLUSTER = "test-cluster"
+    }
+
+
+    stages {
+        stage('git checkout') {
+            steps {
+               checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/venkat132k/k8s-python']])
+            }   //pipeline syntax generator has been used here
+        }
+        
+    stage('Login to AWS ECR') {
+            steps {
+                script {
+                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URI}"
+                }  //variables are called from the global variable env block
+            }
+        }
+        
+    stage('Build Docker Image & tag') {
+            steps {
+                script {
+                    sh "docker build -t ${ECR_REPOSITORY} ."
+                    sh "docker tag ${ECR_REPOSITORY}:latest ${ECR_URI}/${ECR_REPOSITORY}:latest"
+                    sh "docker tag ${ECR_REPOSITORY}:latest ${ECR_URI}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
+                }     //variables are called from the global variable env block
+            }
+        }
+        
+    stage('IMAGE SCANNING') {
+            steps {
+                sh "trivy image --exit-code 0 --severity HIGH,CRITICAL --format table -o trivy-image-report.html ${ECR_URI}/${ECR_REPOSITORY}:latest"
+            }       //variables are called from the global variable env block
+        }   
+        
+    stage ('Push the Docker image') {
+            steps {
+                sh 'docker push ${ECR_URI}/${ECR_REPOSITORY}:latest'
+                sh 'docker push ${ECR_URI}/${ECR_REPOSITORY}:${BUILD_NUMBER}'
+            }   //variables are called from the global variable env block
+        }
+        
+    stage('Update kubeconfig') {
+            steps {
+                script {
+                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}"
+                }
+            }
+        }
+        
+    stage('Deploy on Kubernetes') {
+            steps {
+                sh 'kubectl apply -f pod.yaml'
+                sh 'kubectl rollout restart deployment loadbalancer-pod'
+            }
+        }    
+    }
+}
