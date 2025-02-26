@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: hello
-          image: 211125606679.dkr.ecr.us-east-1.amazonaws.com/venkats_ecr_repo:latest
+          image: 211125606679.dkr.ecr.ap-south-1.amazonaws.com/venkats_ecr_repo:latest
           imagePullPolicy: Always
       imagePullSecrets:
         - name: ecr-secret
