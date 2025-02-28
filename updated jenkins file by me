@@ -28,11 +28,11 @@ pipeline {
     stage('Build Docker Image & tag') {
             steps {
                 script {
-                    sh "docker build -t ${ECR_REPOSITORY} ."
+                    sh "docker build -t ${ECR_REPOSITORY} ."                                          
                     sh "docker tag ${ECR_REPOSITORY}:latest ${ECR_URI}/${ECR_REPOSITORY}:latest"
                     sh "docker tag ${ECR_REPOSITORY}:latest ${ECR_URI}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
                 }     //variables are called from the global variable env block
-            }
+            }          //for the commands just click the push command button in the ECR repo
         }
         
     stage('IMAGE SCANNING') {
@@ -52,7 +52,7 @@ pipeline {
             steps {
                 script {
                     sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}"
-                }
+                }      //this stage is redundent it you have already update the kubeconfig file in the jenkins machine
             }
         }
         
